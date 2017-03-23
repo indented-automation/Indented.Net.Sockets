@@ -35,6 +35,7 @@ function Build {
     'Merge'
     'ImportDependencies'
     'BuildVSProject'
+    'BuildClasses'
     'UpdateMetadata'
 }
 
@@ -94,7 +95,7 @@ class BuildInfo {
         $this.Version = $this.GetVersion()
 
         $this.Package = Join-Path $pwd $this.Version
-        $this.Output = Join-Path $pwd 'Output'
+        $this.Output = Join-Path $pwd 'output'
         if ($pwd.Path -ne $this.ProjectRoot) {
             if ($this.BuildOptions.UseCommonBuildDirectory) {
                 $this.Package = [Path]::Combine($this.ProjectRoot, 'build', $this.ModuleName, $this.Version)
@@ -332,9 +333,11 @@ function Clean {
         Remove-Module $buildInfo.ModuleName
     }
 
-    Get-ChildItem (Split-Path $buildInfo.Package -Parent) -Directory |
-        Where-Object { $_.Name -eq 'Output' -or [Version]::TryParse($_.Name, [Ref]$null) } |
-        Remove-Item -Recurse -Force
+    if (Test-Path (Split-Path $buildInfo.Package -Parent)) {
+        Get-ChildItem (Split-Path $buildInfo.Package -Parent) -Directory |
+            Where-Object { $_.Name -eq 'Output' -or [Version]::TryParse($_.Name, [Ref]$null) } |
+            Remove-Item -Recurse -Force
+    }
 
     $null = New-Item $buildInfo.Output -ItemType Directory -Force
     $null = New-Item $buildInfo.Package -ItemType Directory -Force
@@ -453,8 +456,8 @@ function ImportDependencies {
 }
 
 function BuildVSProject {
-    if (Test-Path "source\classes\*.csproj") {
-        Push-Location "source\classes"
+    if (Test-Path 'source\classes\*.csproj') {
+        Push-Location 'source\classes'
         
         Get-Item *.csproj | ForEach-Object {
             $projXml = [Xml](Get-Content $_.FullName)
@@ -471,6 +474,27 @@ function BuildVSProject {
         }
 
         Pop-Location
+    }
+}
+
+function BuildClasses {
+    if ((Test-Path 'source\classes\*.cs') -and -not (Test-Path 'source\classes\*.csproj')) {
+        $outputPath = Join-Path $buildInfo.Package.FullName 'lib'
+        if (-not (Test-Path $outputPath)) {
+            $null = New-Item $outputPath -ItemType Directory -Force
+        }
+        $typeDefinition = Get-ChildItem 'source\classes\*.cs' | Get-Content
+        $usingStatements = $typeDefinition | Where-Object { $_ -match '^using' } | Select-Object -Unique | Out-String
+        $typeDefinition = $typeDefinition | Where-Object { $_ -notmatch '^using' } | Out-String
+
+        $params = @{
+            TypeDefinition = ($usingStatements + $typeDefinition)
+            OutputAssembly = Join-Path $outputPath ('{0}.dll' -f $buildInfo.ModuleName)
+            OutputType     = 'Library'
+            Language       = 'CSharp'
+
+        }
+        Add-Type @params
     }
 }
 

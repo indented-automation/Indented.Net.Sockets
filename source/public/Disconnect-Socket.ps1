@@ -5,11 +5,10 @@ function Disconnect-Socket {
     #   Disconnect a connected TCP socket.
     # .DESCRIPTION
     #   A TCP socket which has been connected using Connect-Socket may be disconnected using this CmdLet.
-    # .PARAMETER Shutdown
-    # .PARAMETER Socket
-    #   A socket created using New-Socket and connected using Connect-Socket.
     # .INPUTS
     #   System.Net.Sockets.Socket
+    # .OUTPUTS
+    #   None
     # .EXAMPLE
     #   C:\PS>$Socket = New-Socket
     #   C:\PS>$Socket | Connect-Socket -RemoteIPAddress 10.0.0.2 -RemotePort 25
@@ -22,7 +21,9 @@ function Disconnect-Socket {
     #     06/01/2014 - Chris Dent - Created.
 
     [CmdletBinding()]
+    [OutputType([Void])]
     param(
+        # A socket created using New-Socket and connected using Connect-Socket.
         [Parameter(Mandatory = $true, Position = 1, ValueFromPipeline = $true)]
         [Socket]$Socket,
 

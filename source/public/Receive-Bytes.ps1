@@ -11,6 +11,8 @@ function Receive-Bytes {
     # .INPUTS
     #   System.Net.Sockets.Socket
     #   System.UInt32
+    # .OUTPUTS
+    #   System.Management.Automation.PSCustomObject
     # .EXAMPLE
     #   C:\PS> $Socket = New-Socket
     #   C:\PS> Connect-Socket $Socket -RemoteIPAddress 10.0.0.1 -RemotePort 25
@@ -27,6 +29,7 @@ function Receive-Bytes {
     #     25/11/2010 - Chris Dent - Created.
 
     [CmdletBinding()]
+    [OutputType([System.Management.Automation.PSCustomObject])]
     param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         # A socket created using New-Socket. If the ProtocolType is TCP the socket must be connected first.
@@ -56,7 +59,7 @@ function Receive-Bytes {
         }
     }
     if ($bytesReceived) {
-        Write-Verbose "Receive-Bytes: Received $bytesReceived from $($Socket.RemoteEndPoint)"
+        Write-Verbose ('Receive-Bytes: Received {0} from {1}' -f $bytesRecieved, $Socket.RemoteEndPoint)
 
         [PSCustomObject]@{
             BytesReceived  = $bytesReceived

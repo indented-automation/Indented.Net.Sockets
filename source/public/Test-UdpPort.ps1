@@ -1,3 +1,4 @@
+using namespace System.Net
 using namespace System.Net.Sockets
 
 function Test-UdpPort {
@@ -30,30 +31,26 @@ function Test-UdpPort {
     param(
         # A host name or IP address for the target system.
         [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
         [String]$ComputerName,
 
         # The port number to connect to (between 1 and 655535).
         [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
         [UInt16]$Port
     )
 
-    # Substituted this for UdpClient
-    if (-not ([Net.IPAddress]::TryParse($ComputerName, [Ref]$null))) {
-        $dnsRecord = [Net.Dns]::GetHostEntry($ComputerName) |
-            Select-Object -Expand AddressList |
-            Select-Object -First 1
-        $ComputerName = $dnsRecord.IPAddressToString
-    }
-
-    # Set up a socket with a 5 second receive timeout.
-    $UdpSocket = New-Socket -ProtocolType Udp -ReceiveTimeout 5
-    Send-Bytes $UdpSocket -RemoteIPAddress $ComputerName -RemotePort $Port -Data 0
-    # Listen for a reply on the socket. It is unlikely we'll see one.
     try {
-        Receive-Bytes $UdpSocket
+        # Set up a socket with a 5 second receive timeout.
+        $udpClient = New-Object UdpClient
+        $udpClient.Client.ReceiveTimeout = 5000
+        # Send one byte
+        $bytesSent = $udpClient.Send(1, 1, $ComputerName, $Port)
+        $remoteIPEndPoint = New-Object IPEndPoint
+        
+        $bytes = $udpClient.Receive([Ref]$remoteIPEndPoint)
+
     } catch {
+        Write-Verbose $_.Exception.Message
+        
         return $false
     }
     return $true

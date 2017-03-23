@@ -42,16 +42,29 @@ function Connect-InSocket {
 
     process {
         if ($Socket.ProtocolType -ne [ProtocolType]::Tcp) {
-            Write-Warning "The protocol type must be TCP to use Connect-Socket."
+            $params = @{
+                Exception     = New-Object InvalidOperationException 'The protocol type must be TCP to use Connect-Socket.'
+                ErrorId       = 'InvalidProtocol'
+                ErrorCategory = 'InvalidOperation'
+            }
+            Write-Error @params
         } else {
             $remoteEndPoint = [EndPoint](New-Object IPEndPoint($RemoteIPAddress, $RemotePort))
 
             if ($Socket.Connected) {
-                Write-Warning "Connect-Socket: The socket is connected to $($Socket.RemoteEndPoint). No action taken."
+                Write-Verbose 'The socket is connected to {0}. No action taken.' -f $Socket.RemoteEndPoint
+
                 return $true
             } else {
-                $Socket.Connect($RemoteEndPoint)
+                try {
+                    $Socket.Connect($RemoteEndPoint)
+
+                    return $true
+                } catch {
+                    Write-Error -ErrorRecord $_
+                }
             }
         }
+        return $false
     }
 }

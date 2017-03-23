@@ -7,15 +7,11 @@ function Send-Bytes {
     #   Sends bytes using a TCP or UDP socket.
     # .DESCRIPTION
     #   Send-Bytes is used to send outbound TCP or UDP packets as a server responding to a cilent, or as a client sending to a server.
-    # .PARAMETER Broadcast
-    #   Sets the RemoteIPAddress to the undirected broadcast address.
-    # .PARAMETER RemoteIPAddress
-    #   If the Protocol Type is UDP a remote IP address must be defined. Directed or undirected broadcast addresses may be used if EnableBroadcast has been set on the socket.
-    # .PARAMETER Socket
-    #   A socket created using New-Socket. If the ProtocolType is TCP the socket must be connected first.
     # .INPUTS
     #   System.Net.Sockets.Socket
     #   System.UInt32
+    # .OUTPUTS
+    #   None
     # .EXAMPLE
     #   C:\PS>$Socket = New-Socket
     #   C:\PS>Connect-Socket $Socket -RemoteIPAddress 10.0.0.1 -RemotePort 25
@@ -30,20 +26,26 @@ function Send-Bytes {
     #     25/11/2010 - Chris Dent - Created.
 
     [CmdletBinding(DefaultParameterSetName = 'DirectedTcpSend')]
+    [OutputType([Void])]
     param(
+        # A socket created using New-Socket. If the ProtocolType is TCP the socket must be connected first.
         [Parameter(Mandatory = $true, Position = 1, ValueFromPipeline = $true)]
         [Socket]$Socket,
 
+        # If the protocol type is UDP a remote IP address must be specified. Directed or undirected broadcast addresses may be used if EnableBroadcast has been set on the socket.
         [Parameter(Mandatory = $true, ParameterSetName = 'DirectedUdpSend')]
         [IPAddress]$RemoteIPAddress,
 
+        # Sets the RemoteIPAddress to the undirected broadcast address.
         [Parameter(Mandatory = $true, ParameterSetName = 'BroadcastUdpSend')]
         [Switch]$Broadcast,
 
+        # If the protocol type is UDP, a remote port must be specified.
         [Parameter(Mandatory = $true, ParameterSetname = 'DirectedUdpSend')]
         [Parameter(Mandatory = $true, ParameterSetName = 'BroadcastUdpSend')]
         [UInt16]$RemotePort,
-
+    
+        # The data to send (as a byte array).
         [Parameter(Mandatory = $true)]
         [Byte[]]$Data
     )
@@ -53,8 +55,8 @@ function Send-Bytes {
         # IPv6 error checking
         if ($Socket.AddressFamily -eq [AddressFamily]::InterNetworkv6) {
             $errorRecord = New-Object ErrorRecord(
-                (New-Object ArgumentException "EnableBroadcast cannot be set for IPv6 sockets."),
-                "ArgumentException",
+                (New-Object ArgumentException 'EnableBroadcast cannot be set for IPv6 sockets.'),
+                'InvalidIPv6SocketState',
                 [ErrorCategory]::InvalidArgument,
                 $Socket
             )
@@ -63,8 +65,8 @@ function Send-Bytes {
         # TCP socket error checking
         if (-not $Socket.ProtocolType) {
             $errorRecord = New-Object ErrorRecord(
-                (New-Object ArgumentException "EnableBroadcast cannot be set for TCP sockets."),
-                "ArgumentException",
+                (New-Object ArgumentException 'EnableBroadcast cannot be set for TCP sockets.'),
+                "InvalidTCPSocketState",
                 [ErrorCategory]::InvalidArgument,
                 $Socket
             )
@@ -73,8 +75,8 @@ function Send-Bytes {
         # Broadcast flag checking
         if (-not $Socket.EnableBroadcast) {
             $errorRecord = New-Object ErrorRecord(
-                (New-Object InvalidOperationException "EnableBroadcast is not set on the socket."),
-                "InvalidOperation",
+                (New-Object InvalidOperationException 'EnableBroadcast is not set on the socket.'),
+                "BroadcastNotEnabled",
                 [ErrorCategory]::InvalidOperation,
                 $Socket
             )
@@ -88,12 +90,12 @@ function Send-Bytes {
 
     switch ($Socket.ProtocolType) {
         ([ProtocolType]::Tcp) {
-            $Socket.Send($Data) | Out-Null
+            $null = $Socket.Send($Data)
         }
         ([ProtocolType]::Udp) {
             $remoteEndPoint = [EndPoint](New-Object IPEndPoint($RemoteIPAddress, $RemotePort))
 
-            $Socket.SendTo($Data, $RemoteEndPoint) | Out-Null
+            $null = $Socket.SendTo($Data, $RemoteEndPoint)
         }
     }
 }
