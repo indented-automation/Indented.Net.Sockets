@@ -5,7 +5,7 @@ VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Indented.Net.Sockets", "Indented.Net.Sockets\Indented.Net.Sockets.csproj", "{A8645DDB-F362-4389-B0C3-3B6627F22DCA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Indented.Net.Sockets.Tests", "EndianBitConverterTest\Indented.Net.Sockets.Tests.csproj", "{0F626D35-BDBD-49C6-80B7-27D4F696B5CE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Indented.Net.Sockets.Tests", "Indented.Net.Sockets.Tests\Indented.Net.Sockets.Tests.csproj", "{0F626D35-BDBD-49C6-80B7-27D4F696B5CE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
