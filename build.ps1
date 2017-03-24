@@ -34,13 +34,13 @@ function Build {
     'TestSyntax'
     'Merge'
     'ImportDependencies'
-    'BuildVSProject'
-    'BuildClasses'
+    'BuildVSSolution'
     'UpdateMetadata'
 }
 
 function Test {
-    'UnitTest'
+    'VSUnitTest'
+    # 'PSUnitTest'
 }
 
 function Release {
@@ -251,7 +251,9 @@ function Invoke-Step {
     
     param(
         [Parameter(ValueFromPipeline = $true)]
-        $StepName
+        $StepName,
+
+        [Ref]$StepInfo
     )
 
     begin {
@@ -265,7 +267,7 @@ function Invoke-Step {
         }
         Write-Progress @progressParams
 
-        $stepInfo = [PSCustomObject]@{
+        $StepInfo.Value = [PSCustomObject]@{
             Name      = $StepName
             Result    = 'Success'
             StartTime = [DateTime]::Now
@@ -281,25 +283,23 @@ function Invoke-Step {
             if (Get-Command $StepName -ErrorAction SilentlyContinue) {
                 & $StepName
             } else {
-                $stepInfo.Errors = 'InvalidStep'
+                $StepInfo.Value.Errors = 'InvalidStep'
             }
         } catch {
-            $stepInfo.Result = 'Failed'
-            $stepInfo.Errors = $_
+            $StepInfo.Value.Result = 'Failed'
+            $StepInfo.Value.Errors = $_
             $messageColour = 'Red'
         }
 
         $stopWatch.Stop()
-        $stepInfo.TimeTaken = $stopWatch.Elapsed
+        $stepInfo.Value.TimeTaken = $stopWatch.Elapsed
 
         if (-not $Quiet) {
             Write-Host $StepName.PadRight(30) -ForegroundColor Cyan -NoNewline
-            Write-Host -ForegroundColor $messageColour -Object $stepInfo.Result.PadRight(10) -NoNewline
-            Write-Host $stepInfo.StartTime.ToString('t').PadRight(10) -ForegroundColor Gray -NoNewLine
-            Write-Host $stepInfo.TimeTaken -ForegroundColor Gray
+            Write-Host -ForegroundColor $messageColour -Object $stepInfo.Value.Result.PadRight(10) -NoNewline
+            Write-Host $StepInfo.Value.StartTime.ToString('t').PadRight(10) -ForegroundColor Gray -NoNewLine
+            Write-Host $StepInfo.Value.TimeTaken -ForegroundColor Gray
         }
-
-        return $stepInfo
     }
 }
 
@@ -455,46 +455,28 @@ function ImportDependencies {
     }
 }
 
-function BuildVSProject {
-    if (Test-Path 'source\classes\*.csproj') {
+function BuildVSSolution {
+    if (Test-Path 'source\classes\*.sln') {
         Push-Location 'source\classes'
-        
-        Get-Item *.csproj | ForEach-Object {
-            $projXml = [Xml](Get-Content $_.FullName)
-            if ($projXml.Project.PropertyGroup.OutputType -eq 'winexe') {
-                $outputPath = Join-Path $buildInfo.Package.FullName 'bin'
-            } else {
-                $outputPath = Join-Path $buildInfo.Package.FullName 'lib'
-            }
-            if (-not (Test-Path $outputPath)) {
-                $null = New-Item $outputPath -ItemType Directory -Force
-            }
 
-            msbuild /t:Clean /t:Build /p:OutputPath=$outputPath /p:DebugSymbols=false /p:DebugType=None $_.Name
+        # nuget restore
+
+        msbuild /t:Clean /t:Build /p:DebugSymbols=false /p:DebugType=None
+        if ($lastexitcode -ne 0) {
+            throw 'msbuild failed'
+        }
+
+        $path = (Join-Path $buildInfo.Package 'lib')
+        if (-not (Test-Path $path)) {
+            $null = New-Item $path -ItemType Directory -Force
+        }
+        Get-Item * -Exclude *.tests, packages | Where-Object PsIsContainer | ForEach-Object {
+            Get-ChildItem $_.FullName -Filter *.dll -Recurse |
+                Where-Object FullName -like '*bin*' |
+                Copy-Item -Destination $path
         }
 
         Pop-Location
-    }
-}
-
-function BuildClasses {
-    if ((Test-Path 'source\classes\*.cs') -and -not (Test-Path 'source\classes\*.csproj')) {
-        $outputPath = Join-Path $buildInfo.Package.FullName 'lib'
-        if (-not (Test-Path $outputPath)) {
-            $null = New-Item $outputPath -ItemType Directory -Force
-        }
-        $typeDefinition = Get-ChildItem 'source\classes\*.cs' | Get-Content
-        $usingStatements = $typeDefinition | Where-Object { $_ -match '^using' } | Select-Object -Unique | Out-String
-        $typeDefinition = $typeDefinition | Where-Object { $_ -notmatch '^using' } | Out-String
-
-        $params = @{
-            TypeDefinition = ($usingStatements + $typeDefinition)
-            OutputAssembly = Join-Path $outputPath ('{0}.dll' -f $buildInfo.ModuleName)
-            OutputType     = 'Library'
-            Language       = 'CSharp'
-
-        }
-        Add-Type @params
     }
 }
 
@@ -567,7 +549,23 @@ function UpdateMetadata {
     }
 }
 
-function UnitTest {
+function VSUnitTest {
+    if (Test-Path 'source\classes\*.sln') {
+        $path = 'source\classes\packages\NUnit.ConsoleRunner.*\tools\nunit3-console.exe'
+        if (Test-Path $path) {
+            $nunitConsole = (Resolve-Path $path).Path
+            Get-ChildItem 'source\classes' -Filter *tests.dll -Recurse | Where-Object FullName -like '*bin*' | ForEach-Object {
+                & $nunitConsole $_.FullName --result ('{0}\{1}.xml' -f $buildInfo.Output.FullName, ($_.Name -replace '\.tests'))
+
+                if ($lastexitcode -ne 0) {
+                    throw 'VS unit tests failed'
+                }
+            }
+        }
+    }
+}
+
+function PSUnitTest {
     # Execute unit tests
     # Note: These tests are being executed against the Packaged module, not the code in the repository.
 
@@ -612,7 +610,8 @@ try {
         Write-Message ('Building {0} ({1})' -f $buildInfo.ModuleName, $buildInfo.Version)
         
         foreach ($step in $steps) {
-            $stepInfo = Invoke-Step $step
+            $stepInfo = New-Object PSObject
+            Invoke-Step $step -StepInfo ([Ref]$stepInfo)
 
             if ($PassThru) {
                 $stepInfo
