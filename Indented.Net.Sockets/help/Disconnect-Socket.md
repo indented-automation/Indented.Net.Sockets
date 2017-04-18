@@ -67,11 +67,9 @@ Accept wildcard characters: False
 
 ## OUTPUTS
 
-### None
+### System.Void
 
 ## NOTES
-Author: Chris Dent
-
 Change log:
   17/03/2017 - Chris Dent - Modernisation pass.
   06/01/2014 - Chris Dent - Created.

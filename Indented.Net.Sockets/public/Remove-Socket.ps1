@@ -21,6 +21,7 @@ function Remove-Socket {
     #     17/03/2017 - Chris Dent - Modernisation pass.
     #     25/11/2010 - Chris Dent - Created.
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '')]
     [CmdletBinding()]
     [OutputType([Void])]
     param(

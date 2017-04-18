@@ -2,26 +2,21 @@ using namespace System.Management.Automation
 using namespace System.Net
 using namespace System.Net.Sockets
 
-function Send-Bytes {
+function Send-Byte {
     # .SYNOPSIS
     #   Sends bytes using a TCP or UDP socket.
     # .DESCRIPTION
-    #   Send-Bytes is used to send outbound TCP or UDP packets as a server responding to a cilent, or as a client sending to a server.
+    #   Send-Byte is used to send outbound TCP or UDP packets as a server responding to a cilent, or as a client sending to a server.
     # .INPUTS
     #   System.Net.Sockets.Socket
-    #   System.UInt32
-    # .OUTPUTS
-    #   None
     # .EXAMPLE
     #   C:\PS>$Socket = New-Socket
     #   C:\PS>Connect-Socket $Socket -RemoteIPAddress 10.0.0.1 -RemotePort 25
-    #   C:\PS>Send-Bytes $Socket -Data 0
+    #   C:\PS>Send-Byte $Socket -Data 0
     # .EXAMPLE
     #   C:\PS>$Socket = New-Socket -ProtocolType Udp -EnableBroadcast
-    #   C:\PS>Send-Bytes $Socket -Data 0
+    #   C:\PS>Send-Byte $Socket -Data 0
     # .NOTES
-    #   Author: Chris Dent
-    #
     #   Change log:
     #     25/11/2010 - Chris Dent - Created.
 

@@ -1,7 +1,7 @@
 using namespace System.Net
 using namespace System.Net.Sockets
 
-function Connect-InSocket {
+function Connect-Socket {
     # .SYNOPSIS
     #   Connect a TCP socket to a remote IP address and port.
     # .DESCRIPTION
@@ -10,14 +10,10 @@ function Connect-InSocket {
     #   System.Net.IPAddress
     #   System.Net.Sockets.Socket
     #   System.UInt16
-    # .OUTPUTS
-    #   System.Boolean
     # .EXAMPLE
     #   C:\PS> $Socket = New-Socket
     #   C:\PS> Connect-Socket $Socket -RemoteIPAddress 10.0.0.2 -RemotePort 25
     # .NOTES
-    #   Author: Chris Dent
-    #
     #   Change log:
     #     17/03/2017 - Chris Dent - Modernisation pass.
     #     06/01/2014 - Chris Dent - Created.
@@ -43,16 +39,16 @@ function Connect-InSocket {
     process {
         if ($Socket.ProtocolType -ne [ProtocolType]::Tcp) {
             $params = @{
-                Exception     = New-Object InvalidOperationException 'The protocol type must be TCP to use Connect-Socket.'
-                ErrorId       = 'InvalidProtocol'
-                ErrorCategory = 'InvalidOperation'
+                Exception = New-Object InvalidOperationException('The protocol type must be TCP to use Connect-Socket.')
+                ErrorId   = 'InvalidProtocol'
+                Category  = 'InvalidOperation'
             }
             Write-Error @params
         } else {
             $remoteEndPoint = [EndPoint](New-Object IPEndPoint($RemoteIPAddress, $RemotePort))
 
             if ($Socket.Connected) {
-                Write-Verbose 'The socket is connected to {0}. No action taken.' -f $Socket.RemoteEndPoint
+                Write-Verbose ('The socket is connected to {0}. No action taken.' -f $Socket.RemoteEndPoint)
 
                 return $true
             } else {

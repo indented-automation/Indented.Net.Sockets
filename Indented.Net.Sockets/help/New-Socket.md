@@ -14,13 +14,13 @@ Creates a new network socket to use to send and receive packets over a network.
 ### ClientSocket (Default)
 ```
 New-Socket [-ProtocolType <ProtocolType>] [-EnableBroadcast] [-IPv6] [-NoTimeout] [-ReceiveTimeOut <Int32>]
- [-SendTimeOut <Int32>]
+ [-SendTimeOut <Int32>] [-ListenBacklog <Int32>]
 ```
 
 ### ServerSocket
 ```
 New-Socket [-ProtocolType <ProtocolType>] [-LocalIPAddress <IPAddress>] -LocalPort <UInt16> [-IPv6]
- [-NoTimeout] [-ReceiveTimeOut <Int32>] [-SendTimeOut <Int32>]
+ [-NoTimeout] [-ReceiveTimeOut <Int32>] [-SendTimeOut <Int32>] [-ListenBacklog <Int32>]
 ```
 
 ## DESCRIPTION
@@ -177,20 +177,28 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-## INPUTS
+### -ListenBacklog
+The number of
 
-### System.Int32
-System.Net.IPAddress
-System.Net.Sockets.ProtocolType
-System.UInt16
+```yaml
+Type: Int32
+Parameter Sets: (All)
+Aliases: 
+
+Required: False
+Position: Named
+Default value: 0
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
 
 ## OUTPUTS
 
 ### System.Net.Sockets.Socket
 
 ## NOTES
-Author: Chris Dent
-
 Change log:
   17/03/2017 - Chris Dent - Modernisation pass.
   25/11/2010 - Chris Dent - Created.

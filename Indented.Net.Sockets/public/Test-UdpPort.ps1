@@ -35,19 +35,23 @@ function Test-UdpPort {
 
         # The port number to connect to (between 1 and 655535).
         [Parameter(Mandatory = $true)]
-        [UInt16]$Port
+        [UInt16]$Port,
+
+        [Int32]$Length = 20
     )
 
     try {
         # Set up a socket with a 5 second receive timeout.
         $udpClient = New-Object UdpClient
         $udpClient.Client.ReceiveTimeout = 5000
-        # Send one byte
-        $bytesSent = $udpClient.Send(1, 1, $ComputerName, $Port)
-        $remoteIPEndPoint = New-Object IPEndPoint
-        
-        $bytes = $udpClient.Receive([Ref]$remoteIPEndPoint)
 
+        # Generate a random byte sequence of fixed length
+        [Byte[]]$bytes = 1..$Length | ForEach-Object { Get-Random -Minimum 0 -Maximum 256 }
+
+        $null = $udpClient.Send($bytes, 1, $ComputerName, $Port)
+        $remoteIPEndPoint = New-Object IPEndPoint([IPAddress]::Any, 0)
+        
+        $null = $udpClient.Receive([Ref]$remoteIPEndPoint)
     } catch {
         Write-Verbose $_.Exception.Message
         

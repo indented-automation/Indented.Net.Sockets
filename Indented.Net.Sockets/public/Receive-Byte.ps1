@@ -1,7 +1,7 @@
 using namespace System.Net
 using namespace System.Net.Sockets
 
-function Receive-Bytes {
+function Receive-Byte {
     # .SYNOPSIS
     #   Receive bytes using a TCP or UDP socket.
     # .DESCRIPTION
@@ -10,9 +10,6 @@ function Receive-Bytes {
     #   Receive-Bytes will listen for bytes sent to broadcast addresses provided the socket has been created using EnableBroadcast.
     # .INPUTS
     #   System.Net.Sockets.Socket
-    #   System.UInt32
-    # .OUTPUTS
-    #   System.Management.Automation.PSCustomObject
     # .EXAMPLE
     #   C:\PS> $Socket = New-Socket
     #   C:\PS> Connect-Socket $Socket -RemoteIPAddress 10.0.0.1 -RemotePort 25
@@ -22,14 +19,12 @@ function Receive-Bytes {
     #   C:\PS> $Socket = New-Socket -ProtocolType Udp -EnableBroadcast
     #   C:\PS> $Socket | Receive-Bytes
     # .NOTES
-    #   Author: Chris Dent
-    #
     #   Change log:
     #     17/03/2017 - Chris Dent - Modernisation pass.
     #     25/11/2010 - Chris Dent - Created.
 
     [CmdletBinding()]
-    [OutputType([System.Management.Automation.PSCustomObject])]
+    [OutputType('Indented.Net.Sockets.SocketResponse')]
     param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         # A socket created using New-Socket. If the ProtocolType is TCP the socket must be connected first.
